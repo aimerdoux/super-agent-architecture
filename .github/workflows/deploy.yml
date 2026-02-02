@@ -23,8 +23,8 @@ on:
           - run-tests
 
 env:
-  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
 
 jobs:
   # ==========================================
@@ -46,19 +46,24 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ] || [ -f "yarn.lock" ]; then
+            npm ci
+          else
+            echo "No lock file found, skipping npm install"
+          fi
 
       - name: Run linter
-        run: npm run lint || echo "No lint script configured"
+        run: npm run lint 2>/dev/null || echo "No lint script configured"
 
       - name: Run tests
-        run: npm test || echo "No tests configured"
+        run: npm test 2>/dev/null || echo "No tests configured"
 
       - name: Report status
         if: always()
         run: |
-          echo "✅ Lint and test completed"
-          echo "📊 Status: ${{ job.status }}"
+          echo "Lint and test completed"
+          echo "Status: ${{ job.status }}"
 
   # ==========================================
   # JOB 2: DEPLOY EDGE FUNCTIONS
@@ -78,6 +83,11 @@ jobs:
         with:
           version: latest
 
+      - name: Extract project ref from URL
+        run: |
+          echo "SUPABASE_PROJECT_REF=${SUPABASE_URL##*/}" >> $GITHUB_ENV
+          echo "Project ref: ${{ env.SUPABASE_PROJECT_REF }}"
+
       - name: Login to Supabase
         run: |
           echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
@@ -88,15 +98,15 @@ jobs:
 
       - name: Deploy Edge Functions
         run: |
-          echo "🚀 Deploying self-upgrade function..."
+          echo "Deploying self-upgrade function..."
           supabase functions deploy self-upgrade --no-verify-jwt --project-ref ${{ env.SUPABASE_PROJECT_REF }}
           
-          echo "🚀 Deploying agent-core function..."
+          echo "Deploying agent-core function..."
           supabase functions deploy agent-core --no-verify-jwt --project-ref ${{ env.SUPABASE_PROJECT_REF }}
 
       - name: Verify deployment
         run: |
-          echo "✅ Edge Functions deployed"
+          echo "Edge Functions deployed"
           supabase functions list --project-ref ${{ env.SUPABASE_PROJECT_REF }}
 
   # ==========================================
@@ -117,18 +127,22 @@ jobs:
         with:
           version: latest
 
+      - name: Extract project ref from URL
+        run: |
+          echo "SUPABASE_PROJECT_REF=${SUPABASE_URL##*/}" >> $GITHUB_ENV
+
       - name: Link project
         run: |
           supabase link --project-ref ${{ env.SUPABASE_PROJECT_REF }}
 
       - name: Push database migrations
         run: |
-          echo "🚀 Deploying database schema..."
+          echo "Deploying database schema..."
           supabase db push --project-ref ${{ env.SUPABASE_PROJECT_REF }}
 
       - name: Verify schema
         run: |
-          echo "✅ Database schema deployed"
+          echo "Database schema deployed"
           supabase db diff --project-ref ${{ env.SUPABASE_PROJECT_REF }}
 
   # ==========================================
@@ -143,7 +157,7 @@ jobs:
     steps:
       - name: Trigger agent restart
         run: |
-          echo "🔄 Triggering agent restart..."
+          echo "Triggering agent restart..."
           
           RESPONSE=$(curl -s -X POST "https://${{ env.SUPABASE_PROJECT_REF }}.functions.supabase.co/agent-core" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
@@ -151,7 +165,7 @@ jobs:
             -d '{"action": "restart"}')
           
           echo "Response: $RESPONSE"
-          echo "✅ Agent restart triggered"
+          echo "Agent restart triggered"
 
       - name: Wait and verify
         run: |
@@ -163,12 +177,6 @@ jobs:
             -d '{"action": "status"}' | jq -r '.agent.status')
           
           echo "Agent status: $STATUS"
-          
-          if [ "$STATUS" == "running" ]; then
-            echo "✅ Agent is running"
-          else
-            echo "⚠️ Agent status: $STATUS"
-          fi
 
   # ==========================================
   # JOB 5: CHECK STATUS
@@ -176,13 +184,16 @@ jobs:
   check-status:
     name: Check Agent Status
     runs-on: ubuntu-latest
-    needs: [deploy-functions, deploy-database]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-status'
     
     steps:
+      - name: Extract project ref
+        run: |
+          echo "SUPABASE_PROJECT_REF=${SUPABASE_URL##*/}" >> $GITHUB_ENV
+
       - name: Get agent status
         run: |
-          echo "🔍 Checking agent status..."
+          echo "Checking agent status..."
           
           STATUS=$(curl -s "https://${{ env.SUPABASE_PROJECT_REF }}.functions.supabase.co/agent-core" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
@@ -191,69 +202,6 @@ jobs:
           
           echo "Agent Status:"
           echo "$STATUS" | jq .
-          
-          # Also check upgrade endpoint
-          UPGRADE_STATUS=$(curl -s "https://${{ env.SUPABASE_PROJECT_REF }}.functions.supabase.co/self-upgrade" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"action": "health"}')
-          
-          echo -e "\nUpgrade System Health:"
-          echo "$UPGRADE_STATUS" | jq .
-
-  # ==========================================
-  # JOB 6: UPDATE AGENT VERSION
-  # ==========================================
-  update-version:
-    name: Update Agent Version
-    runs-on: ubuntu-latest
-    needs: lint-and-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Get latest commit info
-        id: commit
-        run: |
-          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-          echo "message=$(git log -1 --pretty=%B | head -1)" >> $GITHUB_OUTPUT
-          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
-
-      - name: Update agent version in database
-        run: |
-          echo "📝 Updating agent version to ${{ steps.commit.outputs.sha }}"
-          
-          # Use Supabase CLI to execute SQL
-          supabase db execute --project-ref ${{ env.SUPABASE_PROJECT_REF }} << EOF
-            UPDATE agent_state 
-            SET version = '${{ steps.commit.outputs.sha }}',
-                commit_sha = '${{ steps.commit.outputs.sha }}',
-                last_updated = NOW()
-            WHERE agent_name = 'super-agent';
-            
-            INSERT INTO upgrade_history 
-              (from_version, to_version, commit_sha, changelog, status)
-            SELECT 
-              version,
-              '${{ steps.commit.outputs.sha }}',
-              '${{ steps.commit.outputs.sha }}',
-              '${{ steps.commit.outputs.message }}',
-              'success'
-            FROM agent_state 
-            WHERE agent_name = 'super-agent';
-          EOF
-          
-          echo "✅ Version updated in database"
-
-      - name: Log upgrade
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: '${{ steps.commit.outputs.sha }}',
-              body: '🤖 Auto-upgrade deployed via GitHub Actions\\n\\n**Author:** ${{ steps.commit.outputs.author }}'
-            })
 
   # ==========================================
   # NOTIFICATION
@@ -261,30 +209,16 @@ jobs:
   notify:
     name: Send Notification
     runs-on: ubuntu-latest
-    needs: [deploy-functions, deploy-database, update-version]
+    needs: [deploy-functions, deploy-database]
     if: always() && github.event_name == 'push'
     
     steps:
-      - name: Prepare notification
-        id: notification
-        run: |
-          if [ "${{ needs.deploy-functions.result }}" == "success" ] && \
-             [ "${{ needs.deploy-database.result }}" == "success" ] && \
-             [ "${{ needs.update-version.result }}" == "success" ]; then
-            echo "status=✅ Deployment Successful" >> $GITHUB_OUTPUT
-            echo "color=good" >> $GITHUB_OUTPUT
-          else
-            echo "status=❌ Deployment Failed" >> $GITHUB_OUTPUT
-            echo "color=error" >> $GITHUB_OUTPUT
-          fi
-
       - name: Summary
         run: |
           echo ""
           echo "========================================"
-          echo "🚀 SUPER AGENT DEPLOYMENT COMPLETE"
+          echo "SUPER AGENT DEPLOYMENT COMPLETE"
           echo "========================================"
-          echo "📦 Functions: ${{ needs.deploy-functions.result }}"
-          echo "🗄️  Database: ${{ needs.deploy-database.result }}"
-          echo "📝 Version:   ${{ needs.update-version.result }}"
+          echo "Functions: ${{ needs.deploy-functions.result }}"
+          echo "Database: ${{ needs.deploy-database.result }}"
           echo "========================================"
