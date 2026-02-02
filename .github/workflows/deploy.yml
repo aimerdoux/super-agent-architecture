@@ -8,6 +8,7 @@ on:
       - '**.js'
       - '**.json'
       - 'supabase/**'
+      - '.github/**'
   workflow_dispatch:
     inputs:
       action:
@@ -20,7 +21,10 @@ on:
           - deploy-functions
           - restart-agent
           - check-status
-          - run-tests
+
+permissions:
+  contents: read
+  actions: write
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -29,152 +33,110 @@ env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
 jobs:
-  # ==========================================
-  # JOB 1: LINT & TEST
-  # ==========================================
   lint-and-test:
     name: Lint & Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install dependencies
+      - name: Install and test
         run: |
           if [ -f "package-lock.json" ] || [ -f "yarn.lock" ]; then
             npm ci
           else
-            echo "No lock file found, skipping npm install"
+            echo "No lock file, skipping install"
           fi
+          npm run lint 2>/dev/null || echo "No lint configured"
+          npm test 2>/dev/null || echo "No tests configured"
 
-      - name: Run linter
-        run: npm run lint 2>/dev/null || echo "No lint script configured"
-
-      - name: Run tests
-        run: npm test 2>/dev/null || echo "No tests configured"
-
-  # ==========================================
-  # JOB 2: DEPLOY EDGE FUNCTIONS
-  # ==========================================
   deploy-functions:
     name: Deploy Edge Functions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
     needs: [lint-and-test]
     if: github.ref == 'refs/heads/main'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
-
-      - name: Deploy Edge Functions
+      - name: Deploy functions
         run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy self-upgrade --no-verify-jwt
           supabase functions deploy agent-core --no-verify-jwt
-
-      - name: Set function secrets
-        run: |
           supabase secrets set \
             GITHUB_TOKEN="${{ secrets.GH_PAT_TOKEN }}" \
             SUPABASE_URL="$SUPABASE_URL" \
             SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_KEY"
+          supabase functions list
 
-      - name: Verify deployment
-        run: supabase functions list
-
-  # ==========================================
-  # JOB 3: DEPLOY DATABASE SCHEMA
-  # ==========================================
   deploy-database:
-    name: Deploy Database Schema
-    runs-on: ubuntu-latest
+    name: Deploy Database
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
     needs: [lint-and-test]
     if: github.ref == 'refs/heads/main'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Deploy schema
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push || echo "No pending migrations"
 
-      - name: Push database migrations
-        run: supabase db push || echo "No pending migrations"
-
-  # ==========================================
-  # JOB 4: POST-DEPLOY VERIFICATION
-  # ==========================================
   verify:
-    name: Verify Deployment
-    runs-on: ubuntu-latest
+    name: Verify
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
     needs: [deploy-functions]
     if: github.ref == 'refs/heads/main'
-
     steps:
-      - name: Health check agent-core
+      - name: Health check and notify
         run: |
-          RESPONSE=$(curl -sf -X POST \
-            "${SUPABASE_URL}/functions/v1/agent-core" \
+          curl -sf -X POST "${SUPABASE_URL}/functions/v1/agent-core" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
-            -d '{"action": "status"}') || true
-          echo "Agent Core: $RESPONSE"
+            -d '{"action": "status"}' || echo "Health check pending"
 
-      - name: Notify self-upgrade
-        run: |
-          curl -sf -X POST \
-            "${SUPABASE_URL}/functions/v1/self-upgrade" \
+          curl -sf -X POST "${SUPABASE_URL}/functions/v1/self-upgrade" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
             -d "{\"action\": \"pull\", \"commit_sha\": \"${{ github.sha }}\"}" || true
 
-  # ==========================================
-  # JOB 5: RESTART AGENT (Manual only)
-  # ==========================================
   restart-agent:
     name: Restart Agent
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'restart-agent'
-
     steps:
-      - name: Trigger agent restart
+      - name: Restart
         run: |
-          curl -sf -X POST \
-            "${SUPABASE_URL}/functions/v1/agent-core" \
+          curl -sf -X POST "${SUPABASE_URL}/functions/v1/agent-core" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
             -d '{"action": "restart"}'
 
-  # ==========================================
-  # JOB 6: CHECK STATUS (Manual only)
-  # ==========================================
   check-status:
-    name: Check Agent Status
-    runs-on: ubuntu-latest
+    name: Check Status
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-status'
-
     steps:
-      - name: Get agent status
+      - name: Status
         run: |
-          curl -sf -X POST \
-            "${SUPABASE_URL}/functions/v1/agent-core" \
+          curl -sf -X POST "${SUPABASE_URL}/functions/v1/agent-core" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
             -d '{"action": "status"}' | jq .
