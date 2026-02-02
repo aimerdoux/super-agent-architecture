@@ -1,8 +1,10 @@
 const https = require('https');
 
-const FUNCTION_URL = process.env.SUPABASE_URL
-  ? `${process.env.SUPABASE_URL}/functions/v1/agent-core`
-  : 'https://xnzxnhlwabbhnxjxwwyn.functions.supabase.co/agent-core';
+if (!process.env.SUPABASE_URL) {
+  console.error('Error: SUPABASE_URL environment variable is required.');
+  process.exit(1);
+}
+const FUNCTION_URL = `${process.env.SUPABASE_URL}/functions/v1/agent-core`;
 
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 

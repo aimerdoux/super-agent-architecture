@@ -1,6 +1,6 @@
 -- SUPER AGENT - QUICK SETUP SQL
 -- Copy-paste into Supabase SQL Editor
--- https://supabase.com/dashboard/project/xnzxnhlwabbhnxjxwwyn/sql
+-- https://supabase.com/dashboard/project/YOUR_PROJECT_REF/sql
 
 -- 1. Enable extensions (pgvector not available, skipping)
 -- CREATE EXTENSION IF NOT EXISTS "pg_cron"; -- Uncomment if available
