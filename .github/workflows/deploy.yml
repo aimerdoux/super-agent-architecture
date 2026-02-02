@@ -1,5 +1,9 @@
 name: Super Agent Self-Deploy
 
+concurrency:
+  group: super-agent-deploy
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -33,9 +37,25 @@ env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
 jobs:
+  validate-secrets:
+    name: Validate Secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check required secrets
+        run: |
+          MISSING=""
+          [ -z "${{ secrets.SUPABASE_URL }}" ] && MISSING="$MISSING SUPABASE_URL"
+          [ -z "${{ secrets.SUPABASE_SERVICE_KEY }}" ] && MISSING="$MISSING SUPABASE_SERVICE_KEY"
+          [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ] && MISSING="$MISSING SUPABASE_PROJECT_REF"
+          [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] && MISSING="$MISSING SUPABASE_ACCESS_TOKEN"
+          [ -n "$MISSING" ] && echo "::error::Missing secrets:$MISSING" && echo "::error::Add them at: Repo Settings > Secrets and variables > Actions" && exit 1
+          echo "All required secrets present"
+
   lint-and-test:
     name: Lint & Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    needs: [validate-secrets]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +76,7 @@ jobs:
 
   deploy-functions:
     name: Deploy Edge Functions
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [lint-and-test]
     if: github.ref == 'refs/heads/main'
@@ -68,19 +88,23 @@ jobs:
           version: latest
 
       - name: Deploy functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT_TOKEN }}
         run: |
+          [ -z "$GH_PAT" ] && echo "::error::GH_PAT_TOKEN secret required for deploy" && exit 1
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy self-upgrade --no-verify-jwt
           supabase functions deploy agent-core --no-verify-jwt
           supabase secrets set \
-            GITHUB_TOKEN="${{ secrets.GH_PAT_TOKEN }}" \
+            GITHUB_TOKEN="$GH_PAT" \
             SUPABASE_URL="$SUPABASE_URL" \
             SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_KEY"
           supabase functions list
 
   deploy-database:
     name: Deploy Database
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [lint-and-test]
     if: github.ref == 'refs/heads/main'
@@ -92,13 +116,15 @@ jobs:
           version: latest
 
       - name: Deploy schema
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db push || echo "No pending migrations"
 
   verify:
     name: Verify
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [deploy-functions]
     if: github.ref == 'refs/heads/main'
@@ -117,7 +143,8 @@ jobs:
 
   restart-agent:
     name: Restart Agent
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    needs: [validate-secrets]
     timeout-minutes: 5
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'restart-agent'
     steps:
@@ -130,7 +157,8 @@ jobs:
 
   check-status:
     name: Check Status
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    needs: [validate-secrets]
     timeout-minutes: 5
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-status'
     steps:
