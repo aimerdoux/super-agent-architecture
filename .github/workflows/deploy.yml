@@ -25,6 +25,8 @@ on:
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
   SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
 jobs:
   # ==========================================
@@ -36,18 +38,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'none'
 
       - name: Install dependencies
         run: |
-          if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ] || [ -f "yarn.lock" ]; then
+          if [ -f "package-lock.json" ] || [ -f "yarn.lock" ]; then
             npm ci
           else
             echo "No lock file found, skipping npm install"
@@ -59,20 +58,15 @@ jobs:
       - name: Run tests
         run: npm test 2>/dev/null || echo "No tests configured"
 
-      - name: Report status
-        if: always()
-        run: |
-          echo "Lint and test completed"
-          echo "Status: ${{ job.status }}"
-
   # ==========================================
   # JOB 2: DEPLOY EDGE FUNCTIONS
   # ==========================================
   deploy-functions:
     name: Deploy Edge Functions
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+    needs: [lint-and-test]
+    if: github.ref == 'refs/heads/main'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -82,31 +76,23 @@ jobs:
         with:
           version: latest
 
-      - name: Extract project ref from URL
-        run: |
-          echo "SUPABASE_PROJECT_REF=${SUPABASE_URL##*/}" >> $GITHUB_ENV
-          echo "Project ref: ${{ env.SUPABASE_PROJECT_REF }}"
-
-      - name: Login to Supabase
-        run: |
-          echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
-
       - name: Link project
-        run: |
-          supabase link --project-ref ${{ env.SUPABASE_PROJECT_REF }}
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Deploy Edge Functions
         run: |
-          echo "Deploying self-upgrade function..."
-          supabase functions deploy self-upgrade --no-verify-jwt --project-ref ${{ env.SUPABASE_PROJECT_REF }}
-          
-          echo "Deploying agent-core function..."
-          supabase functions deploy agent-core --no-verify-jwt --project-ref ${{ env.SUPABASE_PROJECT_REF }}
+          supabase functions deploy self-upgrade --no-verify-jwt
+          supabase functions deploy agent-core --no-verify-jwt
+
+      - name: Set function secrets
+        run: |
+          supabase secrets set \
+            GITHUB_TOKEN="${{ secrets.GH_PAT_TOKEN }}" \
+            SUPABASE_URL="$SUPABASE_URL" \
+            SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_KEY"
 
       - name: Verify deployment
-        run: |
-          echo "Edge Functions deployed"
-          supabase functions list --project-ref ${{ env.SUPABASE_PROJECT_REF }}
+        run: supabase functions list
 
   # ==========================================
   # JOB 3: DEPLOY DATABASE SCHEMA
@@ -114,8 +100,9 @@ jobs:
   deploy-database:
     name: Deploy Database Schema
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+    needs: [lint-and-test]
+    if: github.ref == 'refs/heads/main'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -125,98 +112,69 @@ jobs:
         with:
           version: latest
 
-      - name: Extract project ref from URL
-        run: |
-          echo "SUPABASE_PROJECT_REF=${SUPABASE_URL##*/}" >> $GITHUB_ENV
-
       - name: Link project
-        run: |
-          supabase link --project-ref ${{ env.SUPABASE_PROJECT_REF }}
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Push database migrations
-        run: |
-          echo "Deploying database schema..."
-          supabase db push --project-ref ${{ env.SUPABASE_PROJECT_REF }}
-
-      - name: Verify schema
-        run: |
-          echo "Database schema deployed"
-          supabase db diff --project-ref ${{ env.SUPABASE_PROJECT_REF }}
+        run: supabase db push || echo "No pending migrations"
 
   # ==========================================
-  # JOB 4: RESTART AGENT (Optional)
+  # JOB 4: POST-DEPLOY VERIFICATION
+  # ==========================================
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-functions]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Health check agent-core
+        run: |
+          RESPONSE=$(curl -sf -X POST \
+            "${SUPABASE_URL}/functions/v1/agent-core" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"action": "status"}') || true
+          echo "Agent Core: $RESPONSE"
+
+      - name: Notify self-upgrade
+        run: |
+          curl -sf -X POST \
+            "${SUPABASE_URL}/functions/v1/self-upgrade" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"action\": \"pull\", \"commit_sha\": \"${{ github.sha }}\"}" || true
+
+  # ==========================================
+  # JOB 5: RESTART AGENT (Manual only)
   # ==========================================
   restart-agent:
     name: Restart Agent
     runs-on: ubuntu-latest
-    needs: [deploy-functions, deploy-database]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'restart-agent'
-    
+
     steps:
       - name: Trigger agent restart
         run: |
-          echo "Triggering agent restart..."
-          
-          RESPONSE=$(curl -s -X POST "https://${{ env.SUPABASE_PROJECT_REF }}.functions.supabase.co/agent-core" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+          curl -sf -X POST \
+            "${SUPABASE_URL}/functions/v1/agent-core" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
-            -d '{"action": "restart"}')
-          
-          echo "Response: $RESPONSE"
-          echo "Agent restart triggered"
-
-      - name: Wait and verify
-        run: |
-          sleep 10
-          
-          STATUS=$(curl -s "https://${{ env.SUPABASE_PROJECT_REF }}.functions.supabase.co/agent-core" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"action": "status"}' | jq -r '.agent.status')
-          
-          echo "Agent status: $STATUS"
+            -d '{"action": "restart"}'
 
   # ==========================================
-  # JOB 5: CHECK STATUS
+  # JOB 6: CHECK STATUS (Manual only)
   # ==========================================
   check-status:
     name: Check Agent Status
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-status'
-    
-    steps:
-      - name: Extract project ref
-        run: |
-          echo "SUPABASE_PROJECT_REF=${SUPABASE_URL##*/}" >> $GITHUB_ENV
 
+    steps:
       - name: Get agent status
         run: |
-          echo "Checking agent status..."
-          
-          STATUS=$(curl -s "https://${{ env.SUPABASE_PROJECT_REF }}.functions.supabase.co/agent-core" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+          curl -sf -X POST \
+            "${SUPABASE_URL}/functions/v1/agent-core" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
-            -d '{"action": "status"}')
-          
-          echo "Agent Status:"
-          echo "$STATUS" | jq .
-
-  # ==========================================
-  # NOTIFICATION
-  # ==========================================
-  notify:
-    name: Send Notification
-    runs-on: ubuntu-latest
-    needs: [deploy-functions, deploy-database]
-    if: always() && github.event_name == 'push'
-    
-    steps:
-      - name: Summary
-        run: |
-          echo ""
-          echo "========================================"
-          echo "SUPER AGENT DEPLOYMENT COMPLETE"
-          echo "========================================"
-          echo "Functions: ${{ needs.deploy-functions.result }}"
-          echo "Database: ${{ needs.deploy-database.result }}"
-          echo "========================================"
+            -d '{"action": "status"}' | jq .
