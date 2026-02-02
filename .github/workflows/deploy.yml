@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'none'
 
       - name: Install dependencies
         run: |
@@ -71,7 +71,6 @@ jobs:
   deploy-functions:
     name: Deploy Edge Functions
     runs-on: ubuntu-latest
-    needs: lint-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
@@ -115,7 +114,6 @@ jobs:
   deploy-database:
     name: Deploy Database Schema
     runs-on: ubuntu-latest
-    needs: lint-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:

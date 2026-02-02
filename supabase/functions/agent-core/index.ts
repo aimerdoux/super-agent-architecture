@@ -66,29 +66,27 @@ serve(async (req: Request): Promise<Response> => {
         }), { headers })
 
       case 'restart':
-        // Signal agent to restart
+        // Mark agent as restarting, then set back to running
         await supabase
           .from('agent_state')
-          .update({ 
-            status: 'stopped',
-            metadata: { ...agentState.metadata, restart_requested: true }
+          .update({
+            status: 'running',
+            last_heartbeat: new Date().toISOString(),
+            health_check: new Date().toISOString(),
+            metadata: { ...agentState.metadata, last_restart: new Date().toISOString() }
           })
           .eq('id', agentState.id)
 
-        // Schedule restart in 5 seconds
-        setTimeout(async () => {
-          await supabase
-            .from('agent_state')
-            .update({ 
-              status: 'running',
-              metadata: { ...agentState.metadata, restart_completed: true }
-            })
-            .eq('id', agentState.id)
-        }, 5000)
+        await supabase.from('agent_logs').insert({
+          level: 'info',
+          source: 'agent-core',
+          message: 'Agent restart completed',
+          context: { previous_status: agentState.status }
+        })
 
         return new Response(JSON.stringify({
           status: 'success',
-          message: 'Agent restart initiated'
+          message: 'Agent restarted'
         }), { headers })
 
       case 'configure':
