@@ -5,10 +5,50 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface AgentRequest {
-  action: 'execute' | 'status' | 'restart' | 'configure' | 'memory';
+  action: 'execute' | 'status' | 'restart' | 'configure' | 'memory' | 'chat';
   task?: string;
+  message?: string;
   payload?: Record<string, unknown>;
   context?: Record<string, unknown>;
+}
+
+async function callLLM(messages: Array<{role: string, content: string}>, memories: string[]): Promise<string> {
+  const apiKey = Deno.env.get('MINIMAX_API_KEY')!
+  const systemPrompt = `You are Super Agent, an autonomous AI agent running on Supabase Edge Functions. You have persistent memory and can self-upgrade your own code via GitHub.
+
+Your capabilities:
+- Store and recall memories across conversations
+- Check your own status and health
+- Self-upgrade by pulling latest code from GitHub
+- Execute tasks autonomously
+
+${memories.length > 0 ? `Your relevant memories:\n${memories.join('\n')}` : 'No memories stored yet.'}
+
+Be helpful, concise, and proactive. You are always running in the cloud.`
+
+  const res = await fetch('https://api.minimax.io/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'MiniMax-M1',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+      max_tokens: 1024,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`MiniMax API error: ${res.status} ${err}`)
+  }
+
+  const data = await res.json()
+  return data.choices[0].message.content
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -144,21 +184,74 @@ serve(async (req: Request): Promise<Response> => {
             return new Response(JSON.stringify({ status: 'error', message: 'Unknown memory action' }), { headers })
         }
 
-      case 'execute':
-        // Execute a task (placeholder for actual agent logic)
+      case 'chat': {
+        // Chat with the agent using AI
+        const userMessage = payload?.message as string || task || ''
+        if (!userMessage) {
+          return new Response(JSON.stringify({ status: 'error', message: 'No message provided' }), { headers })
+        }
+
+        // Recall recent memories for context
+        const { data: recentMemories } = await supabase
+          .from('agent_memories')
+          .select('content, tier')
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        const memoryStrings = (recentMemories || []).map((m: { content: string, tier: string }) => `[${m.tier}] ${m.content}`)
+
+        const reply = await callLLM(
+          [{ role: 'user', content: userMessage }],
+          memoryStrings
+        )
+
+        // Log the conversation
+        try {
+          await supabase.from('agent_logs').insert({
+            level: 'info',
+            source: 'agent-core',
+            message: `Chat: ${userMessage.slice(0, 100)}`,
+            context: { user_message: userMessage, agent_reply: reply }
+          })
+        } catch {}
+
+        return new Response(JSON.stringify({
+          status: 'success',
+          reply,
+          memories_used: memoryStrings.length
+        }), { headers })
+      }
+
+      case 'execute': {
+        // Execute a task with AI reasoning
+        const taskDesc = task || payload?.task as string || ''
+
+        const { data: taskMemories } = await supabase
+          .from('agent_memories')
+          .select('content, tier')
+          .order('created_at', { ascending: false })
+          .limit(5)
+
+        const mems = (taskMemories || []).map((m: { content: string, tier: string }) => `[${m.tier}] ${m.content}`)
+
+        const result = await callLLM(
+          [{ role: 'user', content: `Execute this task and provide the result:\n\n${taskDesc}\n\nContext: ${JSON.stringify(context || {})}` }],
+          mems
+        )
+
         await supabase.from('agent_logs').insert({
           level: 'info',
           source: 'agent-core',
-          message: `Task executed: ${task}`,
-          context: { task, payload, context }
+          message: `Task executed: ${taskDesc.slice(0, 100)}`,
+          context: { task: taskDesc, result }
         })
 
         return new Response(JSON.stringify({
           status: 'success',
-          task,
-          message: `Task "${task}" completed`,
-          result: { executed: true, timestamp: new Date().toISOString() }
+          task: taskDesc,
+          result
         }), { headers })
+      }
 
       default:
         return new Response(JSON.stringify({ status: 'error', message: 'Unknown action' }), { headers })
