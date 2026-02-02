@@ -56,12 +56,14 @@ serve(async (req: Request): Promise<Response> => {
 
     // Helper: log event
     const logEvent = async (level: string, message: string, context: Record<string, unknown> = {}) => {
-      await supabase.from('agent_logs').insert({
-        level,
-        source: 'self-upgrade',
-        message,
-        context
-      }).catch(() => {})
+      try {
+        await supabase.from('agent_logs').insert({
+          level,
+          source: 'self-upgrade',
+          message,
+          context
+        })
+      } catch {}
     }
 
     await logEvent('info', `Self-upgrade action: ${action}`, { action, commit_sha })
