@@ -41,6 +41,7 @@ jobs:
         fi
         echo "✓ All required secrets are present"
         echo "PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}"
+        echo "TOKEN_PREFIX: $(echo '${{ secrets.SUPABASE_ACCESS_TOKEN }}' | cut -c1-10)..."
     
     - name: Login to Supabase
       run: echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
