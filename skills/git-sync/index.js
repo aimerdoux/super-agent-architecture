@@ -141,15 +141,29 @@ function gitCommit(message) {
   }
 }
 
+function getCurrentBranch() {
+  const gitRoot = CONFIG.workspaceDir;
+  try {
+    const { execFileSync } = require('child_process');
+    return execFileSync('git', ['branch', '--show-current'], { 
+      cwd: gitRoot, encoding: 'utf8' 
+    }).trim();
+  } catch {
+    return 'master';  // Default fallback
+  }
+}
+
 function gitPush() {
   const gitRoot = findGitRoot();
   if (!gitRoot) {
     return { success: false, error: 'Not a git repository' };
   }
   
+  const branch = getCurrentBranch();
+  
   try {
-    execFile('git', ['push', 'origin', 'main'], gitRoot);
-    return { success: true };
+    execFile('git', ['push', 'origin', branch], gitRoot);
+    return { success: true, branch };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -161,9 +175,11 @@ function gitPull() {
     return { success: false, error: 'Not a git repository' };
   }
   
+  const branch = getCurrentBranch();
+  
   try {
-    execFile('git', ['pull', 'origin', 'main'], gitRoot);
-    return { success: true };
+    execFile('git', ['pull', 'origin', branch], gitRoot);
+    return { success: true, branch };
   } catch (e) {
     return { success: false, error: e.message };
   }
