@@ -1,0 +1,80 @@
+{
+  "name": "super-agent-core",
+  "version": "2.0.0",
+  "description": "Local Super Agent with multi-tasking, autonomous evolution, and advanced tooling",
+  "capabilities": [
+    "multi-tier-memory",
+    "parallel-tasks",
+    "autonomous-evolution",
+    "advanced-tooling",
+    "conversation-history",
+    "skill-acquisition",
+    "meta-cognition"
+  ],
+  "tools": [
+    {
+      "name": "memory_store",
+      "description": "Store information in agent memory with automatic tier routing"
+    },
+    {
+      "name": "memory_recall",
+      "description": "Recall memories matching a query"
+    },
+    {
+      "name": "memory_synthesize",
+      "description": "Synthesize and summarize related memories"
+    },
+    {
+      "name": "task_create",
+      "description": "Create a new task"
+    },
+    {
+      "name": "task_parallel",
+      "description": "Execute multiple tasks in parallel"
+    },
+    {
+      "name": "task_queue",
+      "description": "Get the current task queue"
+    },
+    {
+      "name": "evolve",
+      "description": "Trigger self-improvement analysis"
+    },
+    {
+      "name": "skill_acquire",
+      "description": "Learn a new skill"
+    },
+    {
+      "name": "skill_list",
+      "description": "List all acquired skills"
+    },
+    {
+      "name": "tool_execute",
+      "description": "Execute an advanced tool (web_fetch, file_read, file_write, code_analyze, shell_exec)"
+    },
+    {
+      "name": "tool_list",
+      "description": "List available tools"
+    },
+    {
+      "name": "conversation_new",
+      "description": "Start a new conversation"
+    },
+    {
+      "name": "conversation_history",
+      "description": "Get conversation history"
+    },
+    {
+      "name": "agent_status",
+      "description": "Get agent status and metrics"
+    },
+    {
+      "name": "agent_chat",
+      "description": "Chat with the agent using full context"
+    }
+  ],
+  "config": {
+    "autoInit": true,
+    "dataDir": "super-agent-data"
+  }
+}

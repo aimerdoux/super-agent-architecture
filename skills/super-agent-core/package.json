@@ -1,0 +1,22 @@
+{
+  "name": "super-agent-core",
+  "version": "2.0.0",
+  "description": "Local Super Agent with multi-tasking, autonomous evolution, and advanced tooling",
+  "main": "index.js",
+  "keywords": [
+    "openclaw",
+    "skill",
+    "super-agent",
+    "multi-tasking",
+    "autonomous",
+    "evolution",
+    "memory",
+    "meta-cognition"
+  ],
+  "author": "OpenClaw User",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {}
+}

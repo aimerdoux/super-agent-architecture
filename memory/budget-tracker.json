@@ -1,0 +1,23 @@
+{
+  "providers": {
+    "minimax": {
+      "count": 1,
+      "windowStart": 1770350319882
+    },
+    "cursor": {
+      "count": 0,
+      "windowStart": null
+    },
+    "claudeCode": {
+      "count": 0,
+      "windowStart": null
+    }
+  },
+  "totalCost": {
+    "minimax": 0,
+    "cursor": 0,
+    "claudeCode": 0
+  },
+  "lastUpdated": "2026-02-06T03:58:39.883Z",
+  "alerts": []
+}

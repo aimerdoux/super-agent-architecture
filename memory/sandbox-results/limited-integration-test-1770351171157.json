@@ -1,0 +1,243 @@
+{
+  "testName": "limited-integration-test",
+  "mode": "limited",
+  "generatedAt": "2026-02-06T04:12:51.157Z",
+  "duration": 2,
+  "executions": [
+    {
+      "id": "sandbox-1770351171155-54kpa5va7",
+      "command": "echo",
+      "args": [
+        "Test message"
+      ],
+      "mode": "limited",
+      "options": {},
+      "startTime": 1770351171155,
+      "status": "limited",
+      "output": "[LIMITED] Resource-constrained execution of: echo",
+      "error": null,
+      "limits": {
+        "timeout": 30000,
+        "memoryMB": 256,
+        "mode": "limited"
+      },
+      "duration": 1
+    },
+    {
+      "id": "sandbox-1770351171156-g3r6045lg",
+      "command": "pwd",
+      "args": [],
+      "mode": "limited",
+      "options": {},
+      "startTime": 1770351171156,
+      "status": "limited",
+      "output": "[LIMITED] Resource-constrained execution of: pwd",
+      "error": null,
+      "limits": {
+        "timeout": 30000,
+        "memoryMB": 256,
+        "mode": "limited"
+      },
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351171156-zcqax73kb",
+      "command": "node",
+      "args": [
+        "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+      ],
+      "mode": "limited",
+      "options": {
+        "env": {
+          "TEST_INPUT": "input-alpha",
+          "SANDBOX_MODE": "limited"
+        }
+      },
+      "startTime": 1770351171156,
+      "status": "limited",
+      "output": "[LIMITED] Resource-constrained execution of: node",
+      "error": null,
+      "limits": {
+        "timeout": 30000,
+        "memoryMB": 256,
+        "mode": "limited"
+      },
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351171156-elome5nh7",
+      "command": "node",
+      "args": [
+        "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+      ],
+      "mode": "limited",
+      "options": {
+        "env": {
+          "TEST_INPUT": "input-beta",
+          "SANDBOX_MODE": "limited"
+        }
+      },
+      "startTime": 1770351171156,
+      "status": "limited",
+      "output": "[LIMITED] Resource-constrained execution of: node",
+      "error": null,
+      "limits": {
+        "timeout": 30000,
+        "memoryMB": 256,
+        "mode": "limited"
+      },
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351171156-vcjvosjad",
+      "command": "node",
+      "args": [
+        "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+      ],
+      "mode": "limited",
+      "options": {
+        "env": {
+          "TEST_INPUT": "input-gamma",
+          "SANDBOX_MODE": "limited"
+        }
+      },
+      "startTime": 1770351171156,
+      "status": "limited",
+      "output": "[LIMITED] Resource-constrained execution of: node",
+      "error": null,
+      "limits": {
+        "timeout": 30000,
+        "memoryMB": 256,
+        "mode": "limited"
+      },
+      "duration": 1
+    }
+  ],
+  "processes": [],
+  "fileSnapshots": [
+    {
+      "path": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "label": "before",
+      "content": "#!/usr/bin/env node\n/**\n * Sample Test Agent for Sandbox Testing\n * \n * This is a simple agent that can be used to test the sandbox framework.\n * It reads environment variables and produces output based on test inputs.\n */\n\nconst fs = require('fs');\nconst path = require('path');\n\n// Get test input from environment or command line\nconst testInput = process.env.TEST_INPUT || process.argv[2] || 'default';\nconst sandboxMode = process.env.SANDBOX_MODE || 'unknown';\n\n// State file for testing file operations\nconst stateFile = path.join(__dirname, 'memory', 'agent-state.json');\n\n/**\n * Process the test input and return a result\n */\nfunction processInput(input) {\n  const result = {\n    input,\n    timestamp: new Date().toISOString(),\n    mode: sandboxMode,\n    processed: true,\n    data: {\n      length: input.length,\n      uppercase: input.toUpperCase(),\n      reversed: input.split('').reverse().join(''),\n    },\n  };\n  \n  // Update state file (for rollback testing)\n  updateState(result);\n  \n  return result;\n}\n\n/**\n * Update state file with current result\n */\nfunction updateState(data) {\n  try {\n    const stateDir = path.dirname(stateFile);\n    if (!fs.existsSync(stateDir)) {\n      fs.mkdirSync(stateDir, { recursive: true });\n    }\n    \n    let currentState = { runs: [] };\n    if (fs.existsSync(stateFile)) {\n      try {\n        currentState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));\n      } catch {\n        // File exists but invalid JSON\n      }\n    }\n    \n    currentState.runs.push(data);\n    currentState.lastRun = data.timestamp;\n    \n    fs.writeFileSync(stateFile, JSON.stringify(currentState, null, 2));\n  } catch (err) {\n    console.error('Failed to update state:', err.message);\n  }\n}\n\n/**\n * Main execution\n */\nconsole.log('--- Sample Agent Execution ---');\nconsole.log(`Input: ${testInput}`);\nconsole.log(`Mode: ${sandboxMode}`);\nconsole.log('------------------------------');\n\nconst result = processInput(testInput);\nconsole.log(JSON.stringify(result, null, 2));\n\n// Simulate some processing time\nif (sandboxMode === 'production') {\n  const start = Date.now();\n  while (Date.now() - start < 100) {\n    // Small delay in production mode\n  }\n}\n\nprocess.exit(0);\n",
+      "timestamp": 1770351171156,
+      "key": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js:before"
+    },
+    {
+      "path": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "label": "after",
+      "content": "#!/usr/bin/env node\n/**\n * Sample Test Agent for Sandbox Testing\n * \n * This is a simple agent that can be used to test the sandbox framework.\n * It reads environment variables and produces output based on test inputs.\n */\n\nconst fs = require('fs');\nconst path = require('path');\n\n// Get test input from environment or command line\nconst testInput = process.env.TEST_INPUT || process.argv[2] || 'default';\nconst sandboxMode = process.env.SANDBOX_MODE || 'unknown';\n\n// State file for testing file operations\nconst stateFile = path.join(__dirname, 'memory', 'agent-state.json');\n\n/**\n * Process the test input and return a result\n */\nfunction processInput(input) {\n  const result = {\n    input,\n    timestamp: new Date().toISOString(),\n    mode: sandboxMode,\n    processed: true,\n    data: {\n      length: input.length,\n      uppercase: input.toUpperCase(),\n      reversed: input.split('').reverse().join(''),\n    },\n  };\n  \n  // Update state file (for rollback testing)\n  updateState(result);\n  \n  return result;\n}\n\n/**\n * Update state file with current result\n */\nfunction updateState(data) {\n  try {\n    const stateDir = path.dirname(stateFile);\n    if (!fs.existsSync(stateDir)) {\n      fs.mkdirSync(stateDir, { recursive: true });\n    }\n    \n    let currentState = { runs: [] };\n    if (fs.existsSync(stateFile)) {\n      try {\n        currentState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));\n      } catch {\n        // File exists but invalid JSON\n      }\n    }\n    \n    currentState.runs.push(data);\n    currentState.lastRun = data.timestamp;\n    \n    fs.writeFileSync(stateFile, JSON.stringify(currentState, null, 2));\n  } catch (err) {\n    console.error('Failed to update state:', err.message);\n  }\n}\n\n/**\n * Main execution\n */\nconsole.log('--- Sample Agent Execution ---');\nconsole.log(`Input: ${testInput}`);\nconsole.log(`Mode: ${sandboxMode}`);\nconsole.log('------------------------------');\n\nconst result = processInput(testInput);\nconsole.log(JSON.stringify(result, null, 2));\n\n// Simulate some processing time\nif (sandboxMode === 'production') {\n  const start = Date.now();\n  while (Date.now() - start < 100) {\n    // Small delay in production mode\n  }\n}\n\nprocess.exit(0);\n",
+      "timestamp": 1770351171157,
+      "key": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js:after"
+    }
+  ],
+  "testResults": [
+    {
+      "agent": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "mode": "limited",
+      "tests": [
+        {
+          "input": "input-alpha",
+          "result": {
+            "limited": true,
+            "id": "sandbox-1770351171156-zcqax73kb",
+            "command": "node",
+            "args": [
+              "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+            ],
+            "mode": "limited",
+            "options": {
+              "env": {
+                "TEST_INPUT": "input-alpha",
+                "SANDBOX_MODE": "limited"
+              }
+            },
+            "startTime": 1770351171156,
+            "status": "limited",
+            "output": "[LIMITED] Resource-constrained execution of: node",
+            "error": null,
+            "limits": {
+              "timeout": 30000,
+              "memoryMB": 256,
+              "mode": "limited"
+            },
+            "duration": 0,
+            "message": "Limited execution mode - real command not run"
+          }
+        },
+        {
+          "input": "input-beta",
+          "result": {
+            "limited": true,
+            "id": "sandbox-1770351171156-elome5nh7",
+            "command": "node",
+            "args": [
+              "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+            ],
+            "mode": "limited",
+            "options": {
+              "env": {
+                "TEST_INPUT": "input-beta",
+                "SANDBOX_MODE": "limited"
+              }
+            },
+            "startTime": 1770351171156,
+            "status": "limited",
+            "output": "[LIMITED] Resource-constrained execution of: node",
+            "error": null,
+            "limits": {
+              "timeout": 30000,
+              "memoryMB": 256,
+              "mode": "limited"
+            },
+            "duration": 0,
+            "message": "Limited execution mode - real command not run"
+          }
+        },
+        {
+          "input": "input-gamma",
+          "result": {
+            "limited": true,
+            "id": "sandbox-1770351171156-vcjvosjad",
+            "command": "node",
+            "args": [
+              "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+            ],
+            "mode": "limited",
+            "options": {
+              "env": {
+                "TEST_INPUT": "input-gamma",
+                "SANDBOX_MODE": "limited"
+              }
+            },
+            "startTime": 1770351171156,
+            "status": "limited",
+            "output": "[LIMITED] Resource-constrained execution of: node",
+            "error": null,
+            "limits": {
+              "timeout": 30000,
+              "memoryMB": 256,
+              "mode": "limited"
+            },
+            "duration": 1,
+            "message": "Limited execution mode - real command not run"
+          }
+        }
+      ],
+      "timestamp": "2026-02-06T04:12:51.156Z",
+      "fileChanges": {
+        "changed": false,
+        "path": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+        "beforeHash": "-608f3570",
+        "afterHash": "-608f3570"
+      }
+    }
+  ],
+  "summary": {
+    "totalExecutions": 5,
+    "simulated": 0,
+    "mocked": 0,
+    "limited": 5,
+    "real": 0,
+    "errors": 0
+  }
+}

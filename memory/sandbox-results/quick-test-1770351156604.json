@@ -1,0 +1,63 @@
+{
+  "testName": "quick-test",
+  "mode": "mock",
+  "generatedAt": "2026-02-06T04:12:36.602Z",
+  "duration": 3,
+  "executions": [
+    {
+      "id": "sandbox-1770351156601-gs9x4unlo",
+      "command": "echo",
+      "args": [
+        "Hello",
+        "Sandbox"
+      ],
+      "mode": "mock",
+      "options": {},
+      "startTime": 1770351156601,
+      "status": "mocked",
+      "output": "Hello Sandbox",
+      "error": "",
+      "exitCode": 0,
+      "duration": 1
+    },
+    {
+      "id": "sandbox-1770351156602-ii4okkmr8",
+      "command": "pwd",
+      "args": [],
+      "mode": "mock",
+      "options": {},
+      "startTime": 1770351156602,
+      "status": "mocked",
+      "output": "C:\\Users\\play4\\.openclaw\\workspace",
+      "error": "",
+      "exitCode": 0,
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351156602-wda8qsjcm",
+      "command": "ls",
+      "args": [
+        "-la"
+      ],
+      "mode": "mock",
+      "options": {},
+      "startTime": 1770351156602,
+      "status": "mocked",
+      "output": "file1.js\nfile2.md\npackage.json",
+      "error": "",
+      "exitCode": 0,
+      "duration": 0
+    }
+  ],
+  "processes": [],
+  "fileSnapshots": [],
+  "testResults": [],
+  "summary": {
+    "totalExecutions": 3,
+    "simulated": 0,
+    "mocked": 3,
+    "limited": 0,
+    "real": 0,
+    "errors": 0
+  }
+}

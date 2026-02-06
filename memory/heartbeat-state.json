@@ -1,0 +1,100 @@
+{
+  "lastChecks": {
+    "email": null,
+    "calendar": null,
+    "memoryMaintenance": null
+  },
+  "heartbeatCount": 17,
+  "lastHeartbeat": "2026-02-06T17:14:09.496Z",
+  "metaGoalsProgress": {
+    "memorySystemActive": true,
+    "heartbeatActive": true,
+    "selfEvolutionEnabled": true
+  },
+  "lastSelfEvolution": {
+    "analysis": {
+      "patterns": [
+        {
+          "timestamp": "2026-02-06T13:41:48.424Z",
+          "type": "pattern",
+          "data": {
+            "pattern": "Heartbeat checks work best when state is persisted",
+            "confidence": 0.85
+          }
+        },
+        {
+          "timestamp": "2026-02-06T14:15:00Z",
+          "type": "research",
+          "data": {
+            "pattern": "OpenClaw ecosystem has 1,700+ community skills available",
+            "confidence": 1
+          }
+        },
+        {
+          "timestamp": "2026-02-06T14:15:00Z",
+          "type": "research",
+          "data": {
+            "pattern": "Proactive agent patterns enable autonomous operation without human prompts",
+            "confidence": 0.9
+          }
+        }
+      ],
+      "gaps": [
+        {
+          "tool": "exec",
+          "failurePattern": "Command not found - tool limitation",
+          "detected": "2026-02-06T04:12:56.380Z",
+          "severity": "low",
+          "proposedSolution": null
+        },
+        {
+          "timestamp": "2026-02-06T13:41:48.425Z",
+          "type": "gap",
+          "data": {
+            "gap": "No automatic retry on exec failures",
+            "impact": "medium",
+            "resolved": false
+          }
+        },
+        {
+          "timestamp": "2026-02-06T14:15:00Z",
+          "type": "gap",
+          "data": {
+            "gap": "No GitHub integration skill for workspace sync",
+            "impact": "high",
+            "notes": "Found git-sync skill in ecosystem but not installed"
+          }
+        },
+        {
+          "timestamp": "2026-02-06T14:15:00Z",
+          "type": "gap",
+          "data": {
+            "gap": "No visual workflow builder capability",
+            "impact": "medium",
+            "notes": "nodetool enables ComfyUI-like workflows for agents"
+          }
+        },
+        {
+          "timestamp": "2026-02-06T14:15:00Z",
+          "type": "gap",
+          "data": {
+            "gap": "No proactive agent automation skill installed",
+            "impact": "high",
+            "notes": "Proactive Agent 1.2.4 exists but not integrated"
+          }
+        },
+        {
+          "timestamp": "2026-02-06T14:15:00Z",
+          "type": "gap",
+          "data": {
+            "gap": "No MCP server creation capability",
+            "impact": "medium",
+            "notes": "mcp-builder skill available for creating Model Context Protocol servers"
+          }
+        }
+      ]
+    },
+    "goalsDiscovered": 2,
+    "timestamp": "2026-02-06T17:14:09.496Z"
+  }
+}

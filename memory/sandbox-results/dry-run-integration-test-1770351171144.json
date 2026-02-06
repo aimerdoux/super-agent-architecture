@@ -1,0 +1,203 @@
+{
+  "testName": "dry-run-integration-test",
+  "mode": "dry-run",
+  "generatedAt": "2026-02-06T04:12:51.144Z",
+  "duration": 7,
+  "executions": [
+    {
+      "id": "sandbox-1770351171138-unzqns9j9",
+      "command": "echo",
+      "args": [
+        "Test message"
+      ],
+      "mode": "dry-run",
+      "options": {},
+      "startTime": 1770351171138,
+      "status": "simulated",
+      "output": "[SIMULATED] echo Test message",
+      "error": null,
+      "duration": 1
+    },
+    {
+      "id": "sandbox-1770351171139-argx7odcn",
+      "command": "pwd",
+      "args": [],
+      "mode": "dry-run",
+      "options": {},
+      "startTime": 1770351171139,
+      "status": "simulated",
+      "output": "[SIMULATED] pwd ",
+      "error": null,
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351171142-bn6p37zwv",
+      "command": "node",
+      "args": [
+        "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+      ],
+      "mode": "dry-run",
+      "options": {
+        "env": {
+          "TEST_INPUT": "input-alpha",
+          "SANDBOX_MODE": "dry-run"
+        }
+      },
+      "startTime": 1770351171142,
+      "status": "simulated",
+      "output": "[SIMULATED] node C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "error": null,
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351171142-xobpoftxh",
+      "command": "node",
+      "args": [
+        "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+      ],
+      "mode": "dry-run",
+      "options": {
+        "env": {
+          "TEST_INPUT": "input-beta",
+          "SANDBOX_MODE": "dry-run"
+        }
+      },
+      "startTime": 1770351171142,
+      "status": "simulated",
+      "output": "[SIMULATED] node C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "error": null,
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351171142-52o950n33",
+      "command": "node",
+      "args": [
+        "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+      ],
+      "mode": "dry-run",
+      "options": {
+        "env": {
+          "TEST_INPUT": "input-gamma",
+          "SANDBOX_MODE": "dry-run"
+        }
+      },
+      "startTime": 1770351171142,
+      "status": "simulated",
+      "output": "[SIMULATED] node C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "error": null,
+      "duration": 0
+    }
+  ],
+  "processes": [],
+  "fileSnapshots": [
+    {
+      "path": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "label": "before",
+      "content": "#!/usr/bin/env node\n/**\n * Sample Test Agent for Sandbox Testing\n * \n * This is a simple agent that can be used to test the sandbox framework.\n * It reads environment variables and produces output based on test inputs.\n */\n\nconst fs = require('fs');\nconst path = require('path');\n\n// Get test input from environment or command line\nconst testInput = process.env.TEST_INPUT || process.argv[2] || 'default';\nconst sandboxMode = process.env.SANDBOX_MODE || 'unknown';\n\n// State file for testing file operations\nconst stateFile = path.join(__dirname, 'memory', 'agent-state.json');\n\n/**\n * Process the test input and return a result\n */\nfunction processInput(input) {\n  const result = {\n    input,\n    timestamp: new Date().toISOString(),\n    mode: sandboxMode,\n    processed: true,\n    data: {\n      length: input.length,\n      uppercase: input.toUpperCase(),\n      reversed: input.split('').reverse().join(''),\n    },\n  };\n  \n  // Update state file (for rollback testing)\n  updateState(result);\n  \n  return result;\n}\n\n/**\n * Update state file with current result\n */\nfunction updateState(data) {\n  try {\n    const stateDir = path.dirname(stateFile);\n    if (!fs.existsSync(stateDir)) {\n      fs.mkdirSync(stateDir, { recursive: true });\n    }\n    \n    let currentState = { runs: [] };\n    if (fs.existsSync(stateFile)) {\n      try {\n        currentState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));\n      } catch {\n        // File exists but invalid JSON\n      }\n    }\n    \n    currentState.runs.push(data);\n    currentState.lastRun = data.timestamp;\n    \n    fs.writeFileSync(stateFile, JSON.stringify(currentState, null, 2));\n  } catch (err) {\n    console.error('Failed to update state:', err.message);\n  }\n}\n\n/**\n * Main execution\n */\nconsole.log('--- Sample Agent Execution ---');\nconsole.log(`Input: ${testInput}`);\nconsole.log(`Mode: ${sandboxMode}`);\nconsole.log('------------------------------');\n\nconst result = processInput(testInput);\nconsole.log(JSON.stringify(result, null, 2));\n\n// Simulate some processing time\nif (sandboxMode === 'production') {\n  const start = Date.now();\n  while (Date.now() - start < 100) {\n    // Small delay in production mode\n  }\n}\n\nprocess.exit(0);\n",
+      "timestamp": 1770351171140,
+      "key": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js:before"
+    },
+    {
+      "path": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "label": "after",
+      "content": "#!/usr/bin/env node\n/**\n * Sample Test Agent for Sandbox Testing\n * \n * This is a simple agent that can be used to test the sandbox framework.\n * It reads environment variables and produces output based on test inputs.\n */\n\nconst fs = require('fs');\nconst path = require('path');\n\n// Get test input from environment or command line\nconst testInput = process.env.TEST_INPUT || process.argv[2] || 'default';\nconst sandboxMode = process.env.SANDBOX_MODE || 'unknown';\n\n// State file for testing file operations\nconst stateFile = path.join(__dirname, 'memory', 'agent-state.json');\n\n/**\n * Process the test input and return a result\n */\nfunction processInput(input) {\n  const result = {\n    input,\n    timestamp: new Date().toISOString(),\n    mode: sandboxMode,\n    processed: true,\n    data: {\n      length: input.length,\n      uppercase: input.toUpperCase(),\n      reversed: input.split('').reverse().join(''),\n    },\n  };\n  \n  // Update state file (for rollback testing)\n  updateState(result);\n  \n  return result;\n}\n\n/**\n * Update state file with current result\n */\nfunction updateState(data) {\n  try {\n    const stateDir = path.dirname(stateFile);\n    if (!fs.existsSync(stateDir)) {\n      fs.mkdirSync(stateDir, { recursive: true });\n    }\n    \n    let currentState = { runs: [] };\n    if (fs.existsSync(stateFile)) {\n      try {\n        currentState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));\n      } catch {\n        // File exists but invalid JSON\n      }\n    }\n    \n    currentState.runs.push(data);\n    currentState.lastRun = data.timestamp;\n    \n    fs.writeFileSync(stateFile, JSON.stringify(currentState, null, 2));\n  } catch (err) {\n    console.error('Failed to update state:', err.message);\n  }\n}\n\n/**\n * Main execution\n */\nconsole.log('--- Sample Agent Execution ---');\nconsole.log(`Input: ${testInput}`);\nconsole.log(`Mode: ${sandboxMode}`);\nconsole.log('------------------------------');\n\nconst result = processInput(testInput);\nconsole.log(JSON.stringify(result, null, 2));\n\n// Simulate some processing time\nif (sandboxMode === 'production') {\n  const start = Date.now();\n  while (Date.now() - start < 100) {\n    // Small delay in production mode\n  }\n}\n\nprocess.exit(0);\n",
+      "timestamp": 1770351171143,
+      "key": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js:after"
+    }
+  ],
+  "testResults": [
+    {
+      "agent": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+      "mode": "dry-run",
+      "tests": [
+        {
+          "input": "input-alpha",
+          "result": {
+            "simulated": true,
+            "id": "sandbox-1770351171142-bn6p37zwv",
+            "command": "node",
+            "args": [
+              "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+            ],
+            "mode": "dry-run",
+            "options": {
+              "env": {
+                "TEST_INPUT": "input-alpha",
+                "SANDBOX_MODE": "dry-run"
+              }
+            },
+            "startTime": 1770351171142,
+            "status": "simulated",
+            "output": "[SIMULATED] node C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+            "error": null,
+            "duration": 0,
+            "message": "Dry-run mode - no actual execution"
+          }
+        },
+        {
+          "input": "input-beta",
+          "result": {
+            "simulated": true,
+            "id": "sandbox-1770351171142-xobpoftxh",
+            "command": "node",
+            "args": [
+              "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+            ],
+            "mode": "dry-run",
+            "options": {
+              "env": {
+                "TEST_INPUT": "input-beta",
+                "SANDBOX_MODE": "dry-run"
+              }
+            },
+            "startTime": 1770351171142,
+            "status": "simulated",
+            "output": "[SIMULATED] node C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+            "error": null,
+            "duration": 0,
+            "message": "Dry-run mode - no actual execution"
+          }
+        },
+        {
+          "input": "input-gamma",
+          "result": {
+            "simulated": true,
+            "id": "sandbox-1770351171142-52o950n33",
+            "command": "node",
+            "args": [
+              "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js"
+            ],
+            "mode": "dry-run",
+            "options": {
+              "env": {
+                "TEST_INPUT": "input-gamma",
+                "SANDBOX_MODE": "dry-run"
+              }
+            },
+            "startTime": 1770351171142,
+            "status": "simulated",
+            "output": "[SIMULATED] node C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+            "error": null,
+            "duration": 0,
+            "message": "Dry-run mode - no actual execution"
+          }
+        }
+      ],
+      "timestamp": "2026-02-06T04:12:51.141Z",
+      "fileChanges": {
+        "changed": false,
+        "path": "C:\\Users\\play4\\.openclaw\\workspace\\sample-agent.js",
+        "beforeHash": "-608f3570",
+        "afterHash": "-608f3570"
+      }
+    }
+  ],
+  "summary": {
+    "totalExecutions": 5,
+    "simulated": 5,
+    "mocked": 0,
+    "limited": 0,
+    "real": 0,
+    "errors": 0
+  }
+}

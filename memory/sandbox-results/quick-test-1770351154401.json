@@ -1,0 +1,60 @@
+{
+  "testName": "quick-test",
+  "mode": "dry-run",
+  "generatedAt": "2026-02-06T04:12:34.399Z",
+  "duration": 3,
+  "executions": [
+    {
+      "id": "sandbox-1770351154398-751zq7ms0",
+      "command": "echo",
+      "args": [
+        "Hello",
+        "Sandbox"
+      ],
+      "mode": "dry-run",
+      "options": {},
+      "startTime": 1770351154398,
+      "status": "simulated",
+      "output": "[SIMULATED] echo Hello Sandbox",
+      "error": null,
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351154399-gsvw6gksg",
+      "command": "pwd",
+      "args": [],
+      "mode": "dry-run",
+      "options": {},
+      "startTime": 1770351154399,
+      "status": "simulated",
+      "output": "[SIMULATED] pwd ",
+      "error": null,
+      "duration": 0
+    },
+    {
+      "id": "sandbox-1770351154399-01912z5qn",
+      "command": "ls",
+      "args": [
+        "-la"
+      ],
+      "mode": "dry-run",
+      "options": {},
+      "startTime": 1770351154399,
+      "status": "simulated",
+      "output": "[SIMULATED] ls -la",
+      "error": null,
+      "duration": 0
+    }
+  ],
+  "processes": [],
+  "fileSnapshots": [],
+  "testResults": [],
+  "summary": {
+    "totalExecutions": 3,
+    "simulated": 3,
+    "mocked": 0,
+    "limited": 0,
+    "real": 0,
+    "errors": 0
+  }
+}

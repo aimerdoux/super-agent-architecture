@@ -1,0 +1,21 @@
+{
+  "id": "1770164386030-m8yul9tfm",
+  "description": "Comprehensive analysis task",
+  "status": "completed",
+  "priority": 8,
+  "type": "analysis",
+  "dependencies": [],
+  "parentId": null,
+  "subtasks": [],
+  "result": {
+    "executed": true,
+    "timestamp": "2026-02-04T00:19:46.037Z"
+  },
+  "error": null,
+  "retries": 0,
+  "maxRetries": 3,
+  "createdAt": "2026-02-04T00:19:46.030Z",
+  "startedAt": "2026-02-04T00:19:46.036Z",
+  "completedAt": "2026-02-04T00:19:46.037Z",
+  "metadata": {}
+}

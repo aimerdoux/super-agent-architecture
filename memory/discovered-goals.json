@@ -1,0 +1,58 @@
+{
+  "goals": [
+    {
+      "id": "goal_1770351193279_r12q076tn",
+      "title": "Resolve recurring error: Failed to connect to database: timeout after 30s",
+      "description": "Address the 2x recurring error pattern detected in system logs.",
+      "category": "stability",
+      "targetMetric": "error_frequency_reduction",
+      "targetValue": 0,
+      "impactScore": 10,
+      "status": "active",
+      "createdAt": "2026-02-06T04:13:13.279Z",
+      "sourceSignal": "error_resolution",
+      "estimatedEffort": "medium",
+      "assignedBudget": 40,
+      "totalScore": 6.4,
+      "alignmentScore": 1,
+      "priority": "critical",
+      "activatedAt": "2026-02-06T04:13:13.281Z"
+    },
+    {
+      "id": "goal_1770351193280_proactive_1",
+      "title": "Improve memory retrieval accuracy",
+      "description": "Enhance context recall based on user interactions",
+      "category": "memory",
+      "impactScore": 7,
+      "status": "active",
+      "createdAt": "2026-02-06T04:13:13.280Z",
+      "sourceSignal": "proactive",
+      "estimatedEffort": "medium",
+      "assignedBudget": 40,
+      "totalScore": 5.4,
+      "alignmentScore": 3,
+      "priority": "high",
+      "activatedAt": "2026-02-06T04:13:13.281Z"
+    },
+    {
+      "id": "goal_1770351193279_un5n31rrr",
+      "title": "Improve: memory_retrieval",
+      "description": "Feedback received: positive sentiment on memory_retrieval",
+      "category": "quality",
+      "targetMetric": "feedback_sentiment",
+      "targetValue": 1,
+      "impactScore": 7,
+      "status": "active",
+      "createdAt": "2026-02-06T04:13:13.279Z",
+      "sourceSignal": "quality_improvement",
+      "estimatedEffort": "low",
+      "assignedBudget": 20,
+      "totalScore": 4.6000000000000005,
+      "alignmentScore": 1,
+      "priority": "high",
+      "activatedAt": "2026-02-06T04:13:13.281Z"
+    }
+  ],
+  "lastUpdated": "2026-02-06T04:13:13.282Z",
+  "totalSignalsProcessed": 5
+}

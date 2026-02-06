@@ -1,0 +1,77 @@
+{
+  "skillName": "git-sync",
+  "skillPath": "skills/git-sync",
+  "timestamp": "2026-02-06T14:29:23.875Z",
+  "filesScanned": [
+    "skills\\git-sync\\index.js",
+    "skills\\git-sync\\SKILL.md"
+  ],
+  "findings": [
+    {
+      "type": "source",
+      "severity": "medium",
+      "name": "No source URL provided - manual verification required",
+      "context": "",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "critical",
+      "name": "Command execution",
+      "file": "skills\\git-sync\\index.js",
+      "context": "========================================= // SAFE EXEC (No dynamic command construction) // ==============",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "critical",
+      "name": "Child process spawning",
+      "file": "skills\\git-sync\\index.js",
+      "context": " args, cwd) {   const { execFileSync } = require('child_process');   return execFileSync(cmd, args, {      cwd,  ",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "medium",
+      "name": "Directory path exposure",
+      "file": "skills\\git-sync\\index.js",
+      "context": "IG = Object.freeze({   workspaceDir: path.resolve(__dirname, '../../..'),   backupDir: path.resolve(__dirname",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "medium",
+      "name": "Network URL patterns",
+      "file": "skills\\git-sync\\index.js",
+      "context": "// Validate URL format   if (!repoUrl.startsWith('https://github.com/') && !repoUrl.startsWith('git@')) {   ",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "low",
+      "name": "File read operations",
+      "file": "skills\\git-sync\\index.js",
+      "context": "adJson(filePath) {   try {     const content = fs.readFileSync(filePath, 'utf8');     return JSON.parse(content)",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "low",
+      "name": "File write operations",
+      "file": "skills\\git-sync\\index.js",
+      "context": "   } }  function writeJson(filePath, data) {   fs.writeFileSync(filePath, JSON.stringify(data, null, 2)); }  func",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    },
+    {
+      "type": "pattern",
+      "severity": "medium",
+      "name": "Network URL patterns",
+      "file": "skills\\git-sync\\SKILL.md",
+      "context": " author: OpenClaw Self-Evolution System homepage: https://github.com/openclaw permissions: {} metadata: {} -",
+      "timestamp": "2026-02-06T14:29:23.875Z"
+    }
+  ],
+  "riskScore": 450,
+  "riskLevel": "critical",
+  "recommendation": "❌ REJECT - Critical security risks detected"
+}
