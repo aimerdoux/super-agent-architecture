@@ -65,6 +65,4 @@ jobs:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
     - name: Generate types
-      run: supabase gen types typescript --local > supabase/types.ts
-      env:
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      run: supabase gen types typescript --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} > supabase/types.ts
