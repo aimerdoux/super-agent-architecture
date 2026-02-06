@@ -28,10 +28,9 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
     
     - name: Install dependencies
-      run: npm install @supabase/supabase-js dotenv
+      run: npm install @supabase/supabase-js dotenv --no-save
     
     - name: Run Memory Sync
       run: node scripts/memory-sync.js
