@@ -26,6 +26,7 @@ jobs:
     
     - name: Validate required secrets
       run: |
+        echo "Validating required secrets..."
         if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
           echo "Error: SUPABASE_ACCESS_TOKEN is not set"
           exit 1
@@ -38,7 +39,7 @@ jobs:
           echo "Error: DATABASE_URL is not set"
           exit 1
         fi
-        echo "All required secrets are present"
+        echo "✓ All required secrets are present"
     
     - name: Login to Supabase
       run: echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
