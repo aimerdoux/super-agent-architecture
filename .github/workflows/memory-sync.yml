@@ -1,0 +1,50 @@
+name: Memory Sync
+
+on:
+  push:
+    paths:
+      - 'memory/**'
+      - '.github/workflows/memory-sync.yml'
+  schedule:
+    # Run every hour for continuous sync
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force full resync'
+        required: false
+        default: 'false'
+
+jobs:
+  sync-memories:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Get full history for memory files
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install @supabase/supabase-js dotenv
+    
+    - name: Run Memory Sync
+      run: node scripts/memory-sync.js
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        FORCE: ${{ github.event.inputs.force || 'false' }}
+    
+    - name: Commit generated types
+      if: github.event.inputs.force == 'true'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add supabase/types.ts
+        git commit -m "chore: Update generated types after memory sync" || true
+        git push || true
