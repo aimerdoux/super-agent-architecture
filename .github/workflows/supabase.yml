@@ -6,6 +6,11 @@ on:
       - 'supabase/**'
       - '.github/workflows/supabase.yml'
   workflow_dispatch:
+    inputs:
+      migrate:
+        description: 'Run migrations instead of db push'
+        required: false
+        default: 'false'
 
 jobs:
   deploy-db:
@@ -19,6 +24,22 @@ jobs:
         npm install -g supabase
         supabase --version
     
+    - name: Validate required secrets
+      run: |
+        if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+          echo "Error: SUPABASE_ACCESS_TOKEN is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+          echo "Error: SUPABASE_PROJECT_REF is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+          echo "Error: DATABASE_URL is not set"
+          exit 1
+        fi
+        echo "All required secrets are present"
+    
     - name: Login to Supabase
       run: echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
       env:
@@ -28,16 +49,21 @@ jobs:
       run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     
     - name: Push database schema
+      if: github.event.inputs.migrate != 'true'
       run: supabase db push
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
-    - name: Run migrations
+    - name: Run migrations only
+      if: github.event.inputs.migrate == 'true'
       run: supabase migration up
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
     - name: Generate types
       run: supabase gen types typescript --local > supabase/types.ts
+      env:
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}

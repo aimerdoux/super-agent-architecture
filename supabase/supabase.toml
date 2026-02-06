@@ -1,0 +1,32 @@
+[supabase]
+  project_id = "xnzxnhlwabbhnxjxwwyn"
+  # Project reference: xnzxnhlwabbhnxjxwwyn
+
+[api]
+  # Configure your API settings here
+  enabled = true
+  port = 54321
+  schemas = ["public", "storage"]
+  extra_search_path = ["public", "extensions"]
+
+[db]
+  # Database configuration
+  port = 5432
+  shadow_port = 54320
+
+[studio]
+  enabled = true
+  port = 54323
+
+[storage]
+  enabled = true
+
+[auth]
+  enabled = true
+  providers = ["github"]
+
+[functions]
+  enabled = true
+
+[analytics]
+  enabled = false
