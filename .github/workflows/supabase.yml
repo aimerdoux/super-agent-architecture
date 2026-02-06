@@ -1,0 +1,43 @@
+name: Supabase Database
+
+on:
+  push:
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-db:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Supabase CLI
+      run: |
+        npm install -g supabase
+        supabase --version
+    
+    - name: Login to Supabase
+      run: echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    
+    - name: Link to project
+      run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    
+    - name: Push database schema
+      run: supabase db push
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    
+    - name: Run migrations
+      run: supabase migration up
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    
+    - name: Generate types
+      run: supabase gen types typescript --local > supabase/types.ts
