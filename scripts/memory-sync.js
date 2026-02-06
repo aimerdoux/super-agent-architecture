@@ -10,7 +10,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { execSync } = require('child_process');
 
 // Configuration
-const LOCAL_MEMORY_DIR = path.join(__dirname, 'memory');
+const LOCAL_MEMORY_DIR = path.join(__dirname, '..', 'memory');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
