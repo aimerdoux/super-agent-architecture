@@ -1,4 +1,4 @@
-name: Supabase Database
+name: Supabase Database Deployment
 
 on:
   push:
