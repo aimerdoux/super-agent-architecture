@@ -1,0 +1,113 @@
+{
+  "version": "3.8",
+  
+  "services": {
+    "sandbox-validator": {
+      "build": {
+        "context": ./sandbox,
+        "dockerfile": Dockerfile
+      },
+      "container_name": "jarvis-sandbox-${ENV:-dev}",
+      "environment": [
+        "NODE_ENV=${NODE_ENV:-development}",
+        "SANDBOX_MODE=true",
+        "METRICS_ENDPOINT=http://metrics-collector:8080",
+        "REDIS_URL=redis://redis:6379",
+        "POSTGRES_URL=postgres://postgres:postgres@postgres:5432/sandbox"
+      ],
+      "volumes": [
+        "./sandbox/workflows:/app/workflows:ro",
+        "./sandbox/test-data:/app/test-data:ro",
+        "./sandbox/results:/app/results",
+        "./sandbox/config.yaml:/app/config.yaml:ro"
+      ],
+      "mem_limit": "${SANDBOX_MEMORY:-512m}",
+      "cpu_period": 100000,
+      "cpu_quota": 50000,
+      "networks": [
+        "jarvis-internal"
+      ],
+      "healthcheck": {
+        "test": ["CMD", "python", "healthcheck.py"],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 3
+      },
+      "deploy": {
+        "resources": {
+          "limits": {
+            "memory": "512M",
+            "cpus": "0.5"
+          },
+          "reservations": {
+            "memory": "256M",
+            "cpus": "0.25"
+          }
+        }
+      }
+    },
+    
+    "metrics-collector": {
+      "image": "prom/prometheus:v2.45.0",
+      "container_name": "jarvis-metrics",
+      "ports": ["9090:9090"],
+      "volumes": [
+        "./sandbox/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+        "./sandbox/metrics:/prometheus"
+      ],
+      "networks": ["jarvis-internal"]
+    },
+    
+    "redis": {
+      "image": "redis:7-alpine",
+      "container_name": "jarvis-redis",
+      "ports": ["6379:6379"],
+      "networks": ["jarvis-internal"],
+      "command": ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    },
+    
+    "postgres": {
+      "image": "postgres:15-alpine",
+      "container_name": "jarvis-postgres",
+      "environment": [
+        "POSTGRES_PASSWORD=postgres",
+        "POSTGRES_DB=sandbox"
+      ],
+      "volumes": [
+        "postgres_data:/var/lib/postgresql/data"
+      ],
+      "networks": ["jarvis-internal"]
+    },
+    
+    "grafana": {
+      "image": "grafana/grafana:10.0.0",
+      "container_name": "jarvis-grafana",
+      "ports": ["3000:3000"],
+      "environment": [
+        "GF_SECURITY_ADMIN_USER=admin",
+        "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}",
+        "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource"
+      ],
+      "volumes": [
+        "./sandbox/grafana/provisioning:/etc/grafana/provisioning:ro",
+        "./sandbox/grafana/dashboards:/var/lib/grafana/dashboards"
+      ],
+      "networks": ["jarvis-internal"],
+      "depends_on": ["metrics-collector"]
+    }
+  },
+  
+  "networks": {
+    "jarvis-internal": {
+      "driver": "bridge"
+    },
+    
+  "volumes": {
+    "postgres_data": {}
+  },
+  
+  "profiles": {
+    "minimal": ["sandbox-validator", "redis"],
+    "full": ["sandbox-validator", "metrics-collector", "redis", "postgres", "grafana"]
+  }
+}
